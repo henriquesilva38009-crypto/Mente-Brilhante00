@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Caixas Mente Brilhante</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .input { width:100%; padding:0.75rem; border:1px solid #e5e7eb; border-radius:0.5rem; text-transform: capitalize; }
+    #f-estado { text-transform: uppercase !important; }
+    #f-cep, #f-email { text-transform: none !important; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
+
+<div id="app"></div>
+<script>
+const boxes = [
+  { 
+    id: 'box-verde', productId: 5678, color: 'Verde', bgColor: 'bg-green-500',
+    price: 71.25, title: 'Pensar', emoji: '🧠',
+    imageOut: 'https://res.cloudinary.com/dveud6a30/image/upload/v1763512761/IMG-20251118-WA0164_rhq5ui.jpg',
+    imageIn:  'https://res.cloudinary.com/dveud6a30/image/upload/v1763512760/IMG-20251118-WA0150_p0c78k.jpg'
+  },
+  { 
+    id: 'box-vermelho', productId: 5678, color: 'Vermelho', bgColor: 'bg-red-500',
+    price: 71.25, title: 'Criar', emoji: '✨',
+    imageOut: 'https://res.cloudinary.com/dveud6a30/image/upload/v1763512493/IMG-20251118-WA0170_rxjrp9.jpg',
+    imageIn:  'https://res.cloudinary.com/dveud6a30/image/upload/v1763512493/IMG-20251118-WA0143_su2s8y.jpg'
+  },
+  { 
+    id: 'box-azul', productId: 5678, color: 'Azul', bgColor: 'bg-blue-500',
+    price: 71.25, title: 'Inventar', emoji: '💡',
+    imageOut: 'https://res.cloudinary.com/dveud6a30/image/upload/v1763512765/IMG-20251118-WA0166_rp1nmw.jpg',
+    imageIn:  'https://res.cloudinary.com/dveud6a30/image/upload/v1763512762/IMG-20251118-WA0141_pxuykj.jpg'
+  },
+  { 
+    id: 'box-laranja', productId: 5678, color: 'Laranja', bgColor: 'bg-orange-500',
+    price: 71.25, title: 'Brincar', emoji: '🎮',
+    imageOut: 'https://res.cloudinary.com/dveud6a30/image/upload/v1763512762/IMG-20251118-WA0176_igxmn3.jpg',
+    imageIn:  'https://res.cloudinary.com/dveud6a30/image/upload/v1763512761/IMG-20251118-WA0144_iwfi2z.jpg'
+  }
+];
+
+let cart = [];
+let currentView = 'products';
+let freight = 0;
+let orderNumber = '';
+let formData = { nome:'', email:'', telefone:'', endereco:'', cidade:'', estado:'', cep:'' };
+
+function esc(v){ if(v===undefined||v===null) return ''; return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function render(){
+  const app = document.getElementById('app');
+  if(currentView==='products') app.innerHTML = renderProducts();
+  if(currentView==='cart') app.innerHTML = renderCart();
+  if(currentView==='checkout') app.innerHTML = renderCheckout();
+  if(currentView==='payment') app.innerHTML = renderPayment();
+  attachEvents();
+}
+
+/* ---------- PRODUCTS ---------- */
+function renderProducts(){
+  const count = cart.reduce((s,i)=>s+i.quantity,0);
+  return `
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-800">Caixas Mente Brilhante</h1>
+        <p class="text-lg text-gray-600">Escolha sua caixa favorita!</p>
+      </div>
+      <button id="open-cart" class="relative bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold">
+        Carrinho
+        ${count>0?`<span class="absolute -top-2 -right-2 bg-red-500 w-6 h-6 rounded-full text-white flex items-center justify-center text-sm font-bold">${count}</span>`:''}
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      ${boxes.map(b=>`
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div class="h-56 bg-gray-100 flex items-center justify-center">
+            <img src="${b.imageOut}" alt="${esc(b.title)}" class="w-full h-full object-cover"
+                 onmouseover="this.src='${b.imageIn}'"
+                 onmouseout="this.src='${b.imageOut}'" />
+          </div>
+          <div class="p-5">
+            <h3 class="text-xl font-bold">Caixa para ${esc(b.title)}</h3>
+            <p class="text-gray-600 mb-2">${esc(b.color)}</p>
+            <p class="text-2xl font-bold mb-4">R$ ${b.price.toFixed(2)}</p>
+            <button data-add="${b.id}" class="${b.bgColor} text-white w-full py-3 rounded-lg font-semibold">Adicionar ao Carrinho</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- KIT COMPLETO -->
+    <div class="mt-10 max-w-4xl mx-auto bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h2 class="text-2xl font-bold">🎁 Kit Completo</h2>
+          <p class="opacity-90">Leve as 4 caixas juntas!</p>
+        </div>
+        <div class="text-right">
+          <p class="text-3xl font-bold">R$ 256,50</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        ${boxes.map(b=>`<div class="aspect-square rounded-lg overflow-hidden bg-white"><img src="${b.imageOut}" class="w-full h-full object-cover"></div>`).join('')}
+      </div>
+
+      <button id="add-combo" class="w-full bg-white text-purple-700 py-3 rounded-lg font-bold">Adicionar Kit ao Carrinho</button>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- CART ---------- */
+function renderCart(){
+  const subtotal = cart.reduce((s,i)=> s+i.price*i.quantity,0);
+  return `
+  <div class="max-w-4xl mx-auto p-6">
+    <button id="back-to-products" class="text-purple-700 font-semibold mb-6">← Continuar comprando</button>
+    <div class="bg-white p-6 rounded-2xl shadow-lg">
+      <h3 class="text-2xl font-bold mb-4">🛒 Carrinho</h3>
+      ${cart.length===0?`<p class="text-center text-gray-500 py-10">Seu carrinho está vazio</p>`:`
+
+      <div class="space-y-4">
+        ${cart.map(item=>`
+        <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
+          <div class="${item.bgColor} w-16 h-16 rounded-lg flex items-center justify-center text-white text-2xl">${item.emoji}</div>
+          <div class="flex-1">
+            <div class="font-bold">${esc(item.title)}</div>
+            <div class="text-sm text-gray-600">Produto #${item.productId}</div>
+            <div class="font-semibold mt-1">R$ ${item.price.toFixed(2)}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button data-minus="${item.id}" class="w-8 h-8 bg-gray-200 rounded-full">-</button>
+            <div class="w-8 text-center">${item.quantity}</div>
+            <button data-plus="${item.id}" class="w-8 h-8 bg-gray-200 rounded-full">+</button>
+          </div>
+          <button data-remove="${item.id}" class="text-red-500 text-xl ml-3">×</button>
+        </div>
+        `).join('')}
+      </div>
+
+      <div class="border-t mt-6 pt-6 flex justify-between items-center">
+        <div class="text-xl font-bold">Subtotal</div>
+        <div class="text-2xl font-bold text-purple-600">R$ ${subtotal.toFixed(2)}</div>
+      </div>
+      <button id="to-checkout" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold mt-6">Ir para o Checkout</button>
+      `}
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- CHECKOUT ---------- */
+function renderCheckout(){
+  const subtotal = cart.reduce((s,i)=> s+i.price*i.quantity,0);
+  const total = subtotal+freight;
+  return `
+  <div class="max-w-2xl mx-auto p-6">
+    <button id="back-to-cart" class="text-purple-700 font-semibold mb-6">← Voltar ao carrinho</button>
+    <div class="bg-white p-6 rounded-2xl shadow-lg">
+      <h3 class="text-2xl font-bold mb-4">Finalizar Compra</h3>
+      <form id="form-checkout" class="space-y-3">
+
+        <input id="f-nome" class="input" placeholder="Nome Completo" required value="${esc(formData.nome)}" oninput="formData.nome=this.value">
+
+        <input id="f-email" class="input" placeholder="E-mail" required value="${esc(formData.email)}" oninput="formData.email=this.value">
+
+        <input id="f-tel" class="input" placeholder="Telefone" required value="${esc(formData.telefone)}" oninput="formData.telefone=this.value">
+
+        <input id="f-end" class="input" placeholder="Endereço Completo (Rua, Nº, Complemento)" required value="${esc(formData.endereco)}" oninput="formData.endereco=this.value">
+
+        <div class="grid grid-cols-2 gap-3">
+          <input id="f-cidade" class="input" placeholder="Cidade" required value="${esc(formData.cidade)}" oninput="formData.cidade=this.value">
+          <input id="f-estado" class="input" placeholder="UF" maxlength="2" required
+                 value="${esc(formData.estado)}"
+                 oninput="formData.estado=this.value.toUpperCase(); if(this.value.trim().length===2){ calculateFreight(); }"
+                 onblur="calculateFreight()">
+        </div>
+
+        <input id="f-cep" class="input" placeholder="CEP" required value="${esc(formData.cep)}" oninput="formData.cep=this.value">
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
+          <div class="flex justify-between"><span>Produtos:</span><b>R$ ${subtotal.toFixed(2)}</b></div>
+          <div class="flex justify-between"><span>Frete:</span><b>${freight===0?'Grátis':'R$ '+freight.toFixed(2)}</b></div>
+          <div class="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
+            <span>Total:</span><span class="text-purple-600">R$ ${total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold mt-3">Finalizar Compra</button>
+      </form>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- FRETE ---------- */
+function calculateFreight(){
+  const estado = (formData.estado||'').toUpperCase().trim();
+  if(!estado) freight=0;
+  else if(estado==='ES') freight=0;
+  else freight=15;
+  render();
+}
+
+/* ---------- PAYMENT ---------- */
+function renderPayment(){
+  const subtotal = cart.reduce((s,i)=> s+i.price*i.quantity,0);
+  const total = subtotal+freight;
+  return `
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full text-center">
+      <div class="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-pulse">⏳</div>
+      <h3 class="text-2xl font-bold mb-3">Aguardando Pagamento</h3>
+
+      <div class="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-3">
+        <div class="text-xs text-purple-700">Número do Pedido</div>
+        <div class="text-2xl font-bold text-purple-900">#${orderNumber}</div>
+      </div>
+
+      <div class="text-gray-600 mb-3">Obrigado, ${esc(formData.nome)}! Seu pedido foi registrado.</div>
+
+      <div class="bg-gray-50 p-3 rounded-lg mb-4 text-sm">
+        ${cart.map(i=>`<div class="flex justify-between mb-1"><span>${i.quantity}x ${esc(i.title)}</span><span>R$ ${(i.price*i.quantity).toFixed(2)}</span></div>`).join('')}
+        <div class="border-t mt-2 pt-2">
+          <div class="flex justify-between"><span>Subtotal:</span><b>R$ ${subtotal.toFixed(2)}</b></div>
+          ${freight>0?`<div class="flex justify-between"><span>Frete:</span><b>R$ ${freight.toFixed(2)}</b></div>`:''}
+          <div class="flex justify-between font-bold text-lg mt-2"><span>Total:</span><span>R$ ${total.toFixed(2)}</span></div>
+        </div>
+      </div>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm text-yellow-800">
+        ⏳ Realize o pagamento para confirmar seu pedido. Você receberá instruções por email.
+      </div>
+
+      <button id="new-order-btn" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-semibold">Fazer Novo Pedido</button>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------- EVENTS ---------- */
+function attachEvents(){
+  document.querySelectorAll('[data-add]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.add;
+      const found=cart.find(i=>i.id===id);
+      if(found) found.quantity++;
+      else{
+        const box=boxes.find(b=>b.id===id);
+        cart.push({...box, quantity:1});
+      }
+      render();
+    };
+  });
+
+  document.getElementById('add-combo')?.addEventListener('click',()=>{
+    const existing=cart.find(i=>i.id==='combo-kit');
+    if(existing) existing.quantity++;
+    else cart.push({
+      id:'combo-kit',
+      productId:45678,
+      title:'Kit Completo',
+      emoji:'🎁',
+      price:256.50,
+      bgColor:'bg-purple-600',
+      quantity:1
+    });
+    render();
+  });
+
+  document.getElementById('open-cart')?.addEventListener('click',()=>{currentView='cart'; render();});
+  document.getElementById('back-to-products')?.addEventListener('click',()=>{currentView='products'; render();});
+  document.getElementById('to-checkout')?.addEventListener('click',()=>{currentView='checkout'; render();});
+  document.getElementById('back-to-cart')?.addEventListener('click',()=>{currentView='cart'; render();});
+
+  document.querySelectorAll('[data-plus]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.plus;
+      const it=cart.find(i=>i.id===id);
+      if(it){it.quantity++; render();}
+    };
+  });
+
+  document.querySelectorAll('[data-minus]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.minus;
+      const it=cart.find(i=>i.id===id);
+      if(it){
+        it.quantity--;
+        if(it.quantity<=0) cart=cart.filter(x=>x.id!==id);
+        render();
+      }
+    };
+  });
+
+  document.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.remove;
+      cart=cart.filter(x=>x.id!==id);
+      render();
+    };
+  });
+
+  const form=document.getElementById('form-checkout');
+  if(form){
+    form.onsubmit=(e)=>{
+      e.preventDefault();
+
+      formData.nome=document.getElementById('f-nome').value.trim();
+      formData.email=document.getElementById('f-email').value.trim();
+      formData.telefone=document.getElementById('f-tel').value.trim();
+      formData.endereco=document.getElementById('f-end').value.trim();
+      formData.cidade=document.getElementById('f-cidade').value.trim();
+      formData.estado=document.getElementById('f-estado').value.trim().toUpperCase();
+      formData.cep=document.getElementById('f-cep').value.trim();
+
+      calculateFreight();
+
+      /* ---------- LÓGICA DO NÚMERO DE PEDIDO ---------- */
+      const hasKit = cart.some(item => item.id === 'combo-kit');
+
+      if(hasKit){
+        orderNumber = "45678";
+      } else {
+        orderNumber = "5678";
+      }
+
+      currentView='payment';
+      render();
+    };
+  }
+
+  document.getElementById('new-order-btn')?.addEventListener('click',()=>{
+    cart=[];
+    formData={nome:'',email:'',telefone:'',endereco:'',cidade:'',estado:'',cep:''};
+    freight=0;
+    orderNumber='';
+    currentView='products';
+    render();
+  });
+}
+
+/* Inicialização */
+render();
+</script>
+</body>
+</html>
